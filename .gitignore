@@ -1,0 +1,14 @@
+# Virtual environment
+.venv/
+
+# Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# uv lock file (if applicable for libraries)
+uv.lock
+
+/target
+Cargo.lock
+.vscode/

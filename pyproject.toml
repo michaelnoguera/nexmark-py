@@ -1,0 +1,21 @@
+[project]
+name = "nexmark"
+version = "0.1.0"
+description = "Python bindings for nexmark-rs event generator"
+requires-python = ">=3.8,<=3.11"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[tool.uv]
+package = false
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
