@@ -253,20 +253,25 @@ impl PyEventGenerator {
     }
 
     fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<Py<PyAny>> {
-        Python::with_gil(|py| {
-            slf.inner.next().map(|event| PyEvent::from(event).into_py(py))
+        Python::attach(|py| {
+            slf.inner.next()
+                .and_then(|event| Py::new(py, PyEvent::from(event)).ok())
+                .map(|obj| obj.into())
         })
     }
 
     fn take(&mut self, n: usize) -> Vec<Py<PyAny>> {
-        Python::with_gil(|py| {
-            self.inner.by_ref().take(n).map(|event| PyEvent::from(event).into_py(py)).collect()
+        Python::attach(|py| {
+            self.inner.by_ref().take(n)
+                .filter_map(|event| Py::new(py, PyEvent::from(event)).ok())
+                .map(|obj| obj.into())
+                .collect()
         })
     }
 }
 
 #[pymodule]
-fn nexmark(_py: Python, m: &PyModule) -> PyResult<()> {
+fn nexmark(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyConfig>()?;
     m.add_class::<PyPerson>()?;
     m.add_class::<PyAuction>()?;
