@@ -26,15 +26,15 @@ nexmark-rs generated about 10k events per second on my laptop, so I tuned the
 delay in generate.py to match that.
 
 You can disable the delay with the --no-wait flag, which will generate events
-as fast as possible. For generate.py I hit somewhere between 65-70k/s (after 10s, piping stdout to /dev/null) and nexmark-rs produces and prints events at 750k/s (same setup).
+as fast as possible. For generate.py I hit 75k/s (after 10s, piping stdout to /dev/null) and nexmark-rs produces and prints events at 750k/s (same setup).
 
 In the rust library there is a paramter to control the number of generators running in parallel, and I have neither explored that nor exposed it (or any other customizable parameters) here.
 
 This is almost certainly CPU bound and limited by the Python GIL, so if you need performance you should use the Rust library directly.
 
-In a for loop just throwing the events away:
+In a for loop just throwing the events away (benchmark.py):
 ```
-Generated 1327714 events in 10.00 seconds (132771.24 events/sec)
-Generated 1347232 events with 4 generator threads in 10 seconds (134723.20 events/sec)
-Generated 5163417 events with 4 generator processes in 10 seconds (516341.70 events/sec)
+Generated 1400060 events in 10.00 seconds (140005.82 events/sec)
+Generated 1403470 events with 4 generator threads in 10 seconds (140347.00 events/sec)
+Generated 5388012 events with 4 generator processes in 10 seconds (538801.20 events/sec)
 ```

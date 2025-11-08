@@ -1,10 +1,9 @@
 //! Python bindings for nexmark-rs using PyO3.
 
-use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 
 use ::nexmark::config::NexmarkConfig;
-use ::nexmark::event::{Auction, Bid, Event, Person};
+use ::nexmark::event::Event;
 use ::nexmark::EventGenerator;
 
 use serde::{Deserialize, Serialize};
@@ -66,20 +65,6 @@ impl PyPerson {
     }
 }
 
-impl From<Person> for PyPerson {
-    fn from(person: Person) -> Self {
-        PyPerson {
-            id: person.id,
-            name: person.name,
-            email_address: person.email_address,
-            credit_card: person.credit_card,
-            city: person.city,
-            state: person.state,
-            date_time: person.date_time,
-            extra: person.extra,
-        }
-    }
-}
 
 #[pyclass(name = "Auction")]
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -116,22 +101,6 @@ impl PyAuction {
     }
 }
 
-impl From<Auction> for PyAuction {
-    fn from(auction: Auction) -> Self {
-        PyAuction {
-            id: auction.id,
-            item_name: auction.item_name,
-            description: auction.description,
-            initial_bid: auction.initial_bid,
-            reserve: auction.reserve,
-            date_time: auction.date_time,
-            expires: auction.expires,
-            seller: auction.seller,
-            category: auction.category,
-            extra: auction.extra,
-        }
-    }
-}
 
 #[pyclass(name = "Bid")]
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -162,96 +131,82 @@ impl PyBid {
     }
 }
 
-impl From<Bid> for PyBid {
-    fn from(bid: Bid) -> Self {
-        PyBid {
-            auction: bid.auction,
-            bidder: bid.bidder,
-            price: bid.price,
-            date_time: bid.date_time,
-            channel: bid.channel,
-            url: bid.url,
-            extra: bid.extra,
-        }
-    }
+
+#[pyclass(name = "Event")]
+#[derive(Clone, Debug)]
+pub enum PyEventEnum {
+    Person(PyPerson),
+    Auction(PyAuction),
+    Bid(PyBid),
 }
 
 #[pyclass(name = "Event")]
-#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PyEvent {
-    pub kind: String,
-    pub person: Option<PyPerson>,
-    pub auction: Option<PyAuction>,
-    pub bid: Option<PyBid>,
+    pub inner: PyEventEnum,
 }
 
 #[pymethods]
 impl PyEvent {
     fn __repr__(&self) -> String {
-        match self.kind.as_str() {
-            "Person" => self
-                .person
-                .as_ref()
-                .map_or("Person(None)".to_string(), |p| p.__repr__()),
-            "Auction" => self
-                .auction
-                .as_ref()
-                .map_or("Auction(None)".to_string(), |a| a.__repr__()),
-            "Bid" => self
-                .bid
-                .as_ref()
-                .map_or("Bid(None)".to_string(), |b| b.__repr__()),
-            _ => "Unknown".to_string(),
+        match &self.inner {
+            PyEventEnum::Person(p) => p.__repr__(),
+            PyEventEnum::Auction(a) => a.__repr__(),
+            PyEventEnum::Bid(b) => b.__repr__(),
         }
     }
-    fn is_person(&self) -> bool {
-        self.kind == "Person"
+    #[getter]
+    fn value(&self) -> Py<PyAny> {
+        Python::attach(|py| match &self.inner {
+            PyEventEnum::Person(p) => Py::new(py, p.clone()).unwrap().into(),
+            PyEventEnum::Auction(a) => Py::new(py, a.clone()).unwrap().into(),
+            PyEventEnum::Bid(b) => Py::new(py, b.clone()).unwrap().into(),
+        })
     }
-    fn is_auction(&self) -> bool {
-        self.kind == "Auction"
-    }
-    fn is_bid(&self) -> bool {
-        self.kind == "Bid"
-    }
-    fn get_person(&self) -> PyResult<PyPerson> {
-        self.person
-            .clone()
-            .ok_or_else(|| PyTypeError::new_err("Event is not a Person"))
-    }
-    fn get_auction(&self) -> PyResult<PyAuction> {
-        self.auction
-            .clone()
-            .ok_or_else(|| PyTypeError::new_err("Event is not an Auction"))
-    }
-    fn get_bid(&self) -> PyResult<PyBid> {
-        self.bid
-            .clone()
-            .ok_or_else(|| PyTypeError::new_err("Event is not a Bid"))
+    fn kind(&self) -> &'static str {
+        match &self.inner {
+            PyEventEnum::Person(_) => "person",
+            PyEventEnum::Auction(_) => "auction",
+            PyEventEnum::Bid(_) => "bid",
+        }
     }
 }
 
 impl From<Event> for PyEvent {
     fn from(event: Event) -> Self {
-        match event {
-            Event::Person(person) => PyEvent {
-                kind: "Person".to_string(),
-                person: Some(person.into()),
-                auction: None,
-                bid: None,
-            },
-            Event::Auction(auction) => PyEvent {
-                kind: "Auction".to_string(),
-                person: None,
-                auction: Some(auction.into()),
-                bid: None,
-            },
-            Event::Bid(bid) => PyEvent {
-                kind: "Bid".to_string(),
-                person: None,
-                auction: None,
-                bid: Some(bid.into()),
-            },
-        }
+        let inner = match event {
+            Event::Person(person) => PyEventEnum::Person(PyPerson {
+                id: person.id,
+                name: person.name,
+                email_address: person.email_address,
+                credit_card: person.credit_card,
+                city: person.city,
+                state: person.state,
+                date_time: person.date_time,
+                extra: person.extra,
+            }),
+            Event::Auction(auction) => PyEventEnum::Auction(PyAuction {
+                id: auction.id,
+                item_name: auction.item_name,
+                description: auction.description,
+                initial_bid: auction.initial_bid,
+                reserve: auction.reserve,
+                date_time: auction.date_time,
+                expires: auction.expires,
+                seller: auction.seller,
+                category: auction.category,
+                extra: auction.extra,
+            }),
+            Event::Bid(bid) => PyEventEnum::Bid(PyBid {
+                auction: bid.auction,
+                bidder: bid.bidder,
+                price: bid.price,
+                date_time: bid.date_time,
+                channel: bid.channel,
+                url: bid.url,
+                extra: bid.extra,
+            }),
+        };
+        PyEvent { inner }
     }
 }
 

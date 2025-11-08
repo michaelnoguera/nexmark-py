@@ -16,19 +16,8 @@ def event_stream(event_type: str, offset: int, step: int) -> Iterator[Any]:
         if idx < offset:
             idx += step
             continue
-        if event_type == "person" and event.is_person():
-            yield event.get_person()
-        elif event_type == "auction" and event.is_auction():
-            yield event.get_auction()
-        elif event_type == "bid" and event.is_bid():
-            yield event.get_bid()
-        elif event_type == "all":
-            if event.is_person():
-                yield event.get_person()
-            elif event.is_auction():
-                yield event.get_auction()
-            elif event.is_bid():
-                yield event.get_bid()
+        if event_type == "all" or event.kind() == event_type:
+            yield event.value
         idx += step
 
 def format_event(event, fmt: str) -> str:
