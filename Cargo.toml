@@ -1,7 +1,12 @@
 [package]
-name = "nexmark-python"
+name = "nexmark-py"
+authors = ["Michael Noguera <44954999+michaelnoguera@users.noreply.github.com>"]
 version = "0.1.0"
 edition = "2021"
+description = "Incomplete python bindings for the nexmark-rs crate. Not actively maintained, but contributions welcome."
+repository = "https://github.com/michaelnoguera/nexmark-py"
+readme = "README.md"
+license = "Apache-2.0 OR MIT"
 
 [lib]
 name = "nexmark"

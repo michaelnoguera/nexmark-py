@@ -84,7 +84,7 @@ def main(argv=None):
     
     try:
         # Remove artificial delay unless explicitly requested
-        delay = 1 if not args.no_wait else 0
+        delay = 0.00005 if not args.no_wait else 0
         if args.format == "json":
             if args.number is not None:
                 # Efficient batch output
