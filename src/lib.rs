@@ -1,10 +1,13 @@
 //! Python bindings for nexmark-rs using PyO3.
 
-use pyo3::prelude::*;
 use pyo3::exceptions::PyTypeError;
+use pyo3::prelude::*;
+
 use ::nexmark::config::NexmarkConfig;
-use ::nexmark::event::{Event, Person, Auction, Bid};
+use ::nexmark::event::{Auction, Bid, Event, Person};
 use ::nexmark::EventGenerator;
+
+use serde::{Deserialize, Serialize};
 
 #[pyclass(name = "Config")]
 #[derive(Clone)]
@@ -33,7 +36,7 @@ impl PyConfig {
 }
 
 #[pyclass(name = "Person")]
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PyPerson {
     #[pyo3(get)]
     pub id: usize,
@@ -79,7 +82,7 @@ impl From<Person> for PyPerson {
 }
 
 #[pyclass(name = "Auction")]
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PyAuction {
     #[pyo3(get)]
     pub id: usize,
@@ -131,7 +134,7 @@ impl From<Auction> for PyAuction {
 }
 
 #[pyclass(name = "Bid")]
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PyBid {
     #[pyo3(get)]
     pub auction: usize,
@@ -174,7 +177,7 @@ impl From<Bid> for PyBid {
 }
 
 #[pyclass(name = "Event")]
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PyEvent {
     pub kind: String,
     pub person: Option<PyPerson>,
@@ -186,23 +189,44 @@ pub struct PyEvent {
 impl PyEvent {
     fn __repr__(&self) -> String {
         match self.kind.as_str() {
-            "Person" => self.person.as_ref().map_or("Person(None)".to_string(), |p| p.__repr__()),
-            "Auction" => self.auction.as_ref().map_or("Auction(None)".to_string(), |a| a.__repr__()),
-            "Bid" => self.bid.as_ref().map_or("Bid(None)".to_string(), |b| b.__repr__()),
+            "Person" => self
+                .person
+                .as_ref()
+                .map_or("Person(None)".to_string(), |p| p.__repr__()),
+            "Auction" => self
+                .auction
+                .as_ref()
+                .map_or("Auction(None)".to_string(), |a| a.__repr__()),
+            "Bid" => self
+                .bid
+                .as_ref()
+                .map_or("Bid(None)".to_string(), |b| b.__repr__()),
             _ => "Unknown".to_string(),
         }
     }
-    fn is_person(&self) -> bool { self.kind == "Person" }
-    fn is_auction(&self) -> bool { self.kind == "Auction" }
-    fn is_bid(&self) -> bool { self.kind == "Bid" }
+    fn is_person(&self) -> bool {
+        self.kind == "Person"
+    }
+    fn is_auction(&self) -> bool {
+        self.kind == "Auction"
+    }
+    fn is_bid(&self) -> bool {
+        self.kind == "Bid"
+    }
     fn get_person(&self) -> PyResult<PyPerson> {
-        self.person.clone().ok_or_else(|| PyTypeError::new_err("Event is not a Person"))
+        self.person
+            .clone()
+            .ok_or_else(|| PyTypeError::new_err("Event is not a Person"))
     }
     fn get_auction(&self) -> PyResult<PyAuction> {
-        self.auction.clone().ok_or_else(|| PyTypeError::new_err("Event is not an Auction"))
+        self.auction
+            .clone()
+            .ok_or_else(|| PyTypeError::new_err("Event is not an Auction"))
     }
     fn get_bid(&self) -> PyResult<PyBid> {
-        self.bid.clone().ok_or_else(|| PyTypeError::new_err("Event is not a Bid"))
+        self.bid
+            .clone()
+            .ok_or_else(|| PyTypeError::new_err("Event is not a Bid"))
     }
 }
 
@@ -231,8 +255,6 @@ impl From<Event> for PyEvent {
     }
 }
 
-
-
 #[pyclass(name = "EventGenerator")]
 pub struct PyEventGenerator {
     inner: EventGenerator,
@@ -254,7 +276,8 @@ impl PyEventGenerator {
 
     fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<Py<PyAny>> {
         Python::attach(|py| {
-            slf.inner.next()
+            slf.inner
+                .next()
                 .and_then(|event| Py::new(py, PyEvent::from(event)).ok())
                 .map(|obj| obj.into())
         })
@@ -262,7 +285,9 @@ impl PyEventGenerator {
 
     fn take(&mut self, n: usize) -> Vec<Py<PyAny>> {
         Python::attach(|py| {
-            self.inner.by_ref().take(n)
+            self.inner
+                .by_ref()
+                .take(n)
                 .filter_map(|event| Py::new(py, PyEvent::from(event)).ok())
                 .map(|obj| obj.into())
                 .collect()

@@ -8,7 +8,8 @@ name = "nexmark"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.27.1", features = ["experimental-inspect", "extension-module", "abi3-py311"] }
+pyo3 = { version = "0.27.1", features = ["extension-module", "abi3-py311", "serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
 nexmark = "0.2.0"
 
 [build-dependencies]

@@ -1,0 +1,53 @@
+class Config:
+    num_event_generators: int
+    def __init__(self) -> None: ...
+    def __repr__(self) -> str: ...
+
+class Person:
+    id: int
+    name: str
+    email_address: str
+    credit_card: str
+    city: str
+    state: str
+    date_time: int
+    extra: str
+    def __repr__(self) -> str: ...
+
+class Auction:
+    id: int
+    item_name: str
+    description: str
+    initial_bid: int
+    reserve: int
+    date_time: int
+    expires: int
+    seller: int
+    category: int
+    extra: str
+    def __repr__(self) -> str: ...
+
+class Bid:
+    auction: int
+    bidder: int
+    price: int
+    date_time: int
+    channel: str
+    url: str
+    extra: str
+    def __repr__(self) -> str: ...
+
+class Event:
+    def is_person(self) -> bool: ...
+    def is_auction(self) -> bool: ...
+    def is_bid(self) -> bool: ...
+    def get_person(self) -> Person: ...
+    def get_auction(self) -> Auction: ...
+    def get_bid(self) -> Bid: ...
+    def __repr__(self) -> str: ...
+
+class EventGenerator:
+    def __init__(self, config: Config = ...) -> None: ...
+    def __iter__(self) -> EventGenerator: ...
+    def __next__(self) -> Event: ...
+    def take(self, n: int) -> list[Event]: ...
