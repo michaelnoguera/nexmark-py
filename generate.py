@@ -21,36 +21,11 @@ def event_stream(event_type: str, offset: int, step: int) -> Iterator[Any]:
         idx += step
 
 def format_event(event, fmt: str) -> str:
-    def to_dict(obj):
-        # Use attribute order from pyi for Person, Auction, Bid
-        cls = obj.__class__.__name__
-        if cls == "Person":
-            keys = [
-                "id", "name", "email_address", "credit_card",
-                "city", "state", "date_time", "extra"
-            ]
-        elif cls == "Auction":
-            keys = [
-                "id", "item_name", "description", "initial_bid",
-                "reserve", "date_time", "expires", "seller",
-                "category", "extra"
-            ]
-        elif cls == "Bid":
-            keys = [
-                "auction", "bidder", "price", "date_time",
-                "channel", "url", "extra"
-            ]
-        else:
-            keys = [a for a in dir(obj) if not a.startswith("_") and not callable(getattr(obj, a))]
-        return {k: getattr(obj, k) for k in keys if hasattr(obj, k)}
     if fmt == "json":
-        cls = event.__class__.__name__
-        if cls in ("Person", "Auction", "Bid"):
-            return json.dumps({cls: to_dict(event)}, separators=(',', ':'))
-        return json.dumps(to_dict(event), separators=(',', ':'))
+        return json.dumps(event.to_dict(), separators=(',', ':'))
     elif fmt == "rust":
         cls = event.__class__.__name__
-        fields = ", ".join(f'{k}: {json.dumps(v)}' for k, v in to_dict(event).items())
+        fields = ", ".join(f'{k}: {json.dumps(v)}' for k, v in event.to_dict().items())
         return f'{cls} {{ {fields} }}'
     return str(event)
 

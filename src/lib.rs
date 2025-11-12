@@ -1,6 +1,4 @@
-//! Python bindings for nexmark-rs using PyO3.
-
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict};
 
 use ::nexmark::config::NexmarkConfig;
 use ::nexmark::event::Event;
@@ -34,7 +32,7 @@ impl PyConfig {
     }
 }
 
-#[pyclass(name = "Person")]
+#[pyclass(name = "Person", dict)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PyPerson {
     #[pyo3(get)]
@@ -57,16 +55,60 @@ pub struct PyPerson {
 
 #[pymethods]
 impl PyPerson {
+    #[new]
+    fn new(
+        id: usize,
+        name: String,
+        email_address: String,
+        credit_card: String,
+        city: String,
+        state: String,
+        date_time: u64,
+        extra: String,
+    ) -> Self {
+        PyPerson {
+            id,
+            name,
+            email_address,
+            credit_card,
+            city,
+            state,
+            date_time,
+            extra,
+        }
+    }
     fn __repr__(&self) -> String {
         format!(
             "Person(id={}, name='{}', email='{}', city='{}', state='{}')",
             self.id, self.name, self.email_address, self.city, self.state
         )
     }
+    fn to_dict(&self) -> PyResult<Py<PyAny>> {
+        Python::attach(|py| {
+            let dict = PyDict::new(py);
+            dict.set_item("id", self.id)?;
+            dict.set_item("name", self.name.clone())?;
+            dict.set_item("email_address", self.email_address.clone())?;
+            dict.set_item("credit_card", self.credit_card.clone())?;
+            dict.set_item("city", self.city.clone())?;
+            dict.set_item("state", self.state.clone())?;
+            dict.set_item("date_time", self.date_time)?;
+            dict.set_item("extra", self.extra.clone())?;
+            Ok(dict.into())
+        })
+    }
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string(self).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Failed to serialize Person to JSON: {}",
+                e
+            ))
+        })
+    }
 }
 
 
-#[pyclass(name = "Auction")]
+#[pyclass(name = "Auction", dict)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PyAuction {
     #[pyo3(get)]
@@ -93,16 +135,66 @@ pub struct PyAuction {
 
 #[pymethods]
 impl PyAuction {
+    #[new]
+    fn new(
+        id: usize,
+        item_name: String,
+        description: String,
+        initial_bid: usize,
+        reserve: usize,
+        date_time: u64,
+        expires: u64,
+        seller: usize,
+        category: usize,
+        extra: String,
+    ) -> Self {
+        PyAuction {
+            id,
+            item_name,
+            description,
+            initial_bid,
+            reserve,
+            date_time,
+            expires,
+            seller,
+            category,
+            extra,
+        }
+    }
     fn __repr__(&self) -> String {
         format!(
             "Auction(id={}, item='{}', initial_bid={}, seller={})",
             self.id, self.item_name, self.initial_bid, self.seller
         )
     }
+    fn to_dict(&self) -> PyResult<Py<PyAny>> {
+        Python::attach(|py| {
+            let dict = PyDict::new(py);
+            dict.set_item("id", self.id)?;
+            dict.set_item("item_name", self.item_name.clone())?;
+            dict.set_item("description", self.description.clone())?;
+            dict.set_item("initial_bid", self.initial_bid)?;
+            dict.set_item("reserve", self.reserve)?;
+            dict.set_item("date_time", self.date_time)?;
+            dict.set_item("expires", self.expires)?;
+            dict.set_item("seller", self.seller)?;
+            dict.set_item("category", self.category)?;
+            dict.set_item("extra", self.extra.clone())?;
+            Ok(dict.into())
+        })
+    }
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string(self).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Failed to serialize Auction to JSON: {}",
+                e
+            ))
+        })
+    }
 }
 
 
-#[pyclass(name = "Bid")]
+#[pyclass(name = "Bid", dict)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PyBid {
     #[pyo3(get)]
@@ -123,11 +215,52 @@ pub struct PyBid {
 
 #[pymethods]
 impl PyBid {
+    #[new]
+    fn new(
+        auction: i64,
+        bidder: i64,
+        price: i64,
+        date_time: i64,
+        channel: String,
+        url: String,
+        extra: String,
+    ) -> Self {
+        PyBid {
+            auction: auction.try_into().unwrap(),
+            bidder: bidder.try_into().unwrap(),
+            price: price.try_into().unwrap(),
+            date_time: date_time.try_into().unwrap(),
+            channel,
+            url,
+            extra,
+        }
+    }
     fn __repr__(&self) -> String {
         format!(
             "Bid(auction={}, bidder={}, price={})",
             self.auction, self.bidder, self.price
         )
+    }
+    fn to_dict(&self) -> PyResult<Py<PyAny>> {
+        Python::attach(|py| {
+            let dict = PyDict::new(py);
+            dict.set_item("auction", self.auction)?;
+            dict.set_item("bidder", self.bidder)?;
+            dict.set_item("price", self.price)?;
+            dict.set_item("date_time", self.date_time)?;
+            dict.set_item("channel", self.channel.clone())?;
+            dict.set_item("url", self.url.clone())?;
+            dict.set_item("extra", self.extra.clone())?;
+            Ok(dict.into())
+        })
+    }
+    fn to_json(&self) -> PyResult<String> {
+        serde_json::to_string(self).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Failed to serialize Bid to JSON: {}",
+                e
+            ))
+        })
     }
 }
 
@@ -167,6 +300,47 @@ impl PyEvent {
             PyEventEnum::Person(_) => "person",
             PyEventEnum::Auction(_) => "auction",
             PyEventEnum::Bid(_) => "bid",
+        }
+    }
+    fn get_person(&self) -> Option<PyPerson> {
+        match &self.inner {
+            PyEventEnum::Person(p) => Some(p.clone()),
+            _ => None,
+        }
+    }
+    fn get_auction(&self) -> Option<PyAuction> {
+        match &self.inner {
+            PyEventEnum::Auction(a) => Some(a.clone()),
+            _ => None,
+        }
+    }
+    fn get_bid(&self) -> Option<PyBid> {
+        match &self.inner {
+            PyEventEnum::Bid(b) => Some(b.clone()),
+            _ => None,
+        }
+    }
+    fn is_person(&self) -> bool {
+        matches!(self.inner, PyEventEnum::Person(_))
+    }
+    fn is_auction(&self) -> bool {
+        matches!(self.inner, PyEventEnum::Auction(_))
+    }
+    fn is_bid(&self) -> bool {
+        matches!(self.inner, PyEventEnum::Bid(_))
+    }
+    fn to_json(&self) -> PyResult<String> {
+        match &self.inner {
+            PyEventEnum::Person(p) => p.to_json(),
+            PyEventEnum::Auction(a) => a.to_json(),
+            PyEventEnum::Bid(b) => b.to_json(),
+        }
+    }
+    fn to_dict(&self) -> PyResult<Py<PyAny>> {
+        match &self.inner {
+            PyEventEnum::Person(p) => p.to_dict(),
+            PyEventEnum::Auction(a) => a.to_dict(),
+            PyEventEnum::Bid(b) => b.to_dict(),
         }
     }
 }
@@ -260,3 +434,4 @@ fn nexmark(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyEventGenerator>()?;
     Ok(())
 }
+

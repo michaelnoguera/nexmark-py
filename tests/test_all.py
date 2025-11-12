@@ -81,3 +81,130 @@ def test_bid_repr():
         if event.is_bid():
             bid = event.get_bid()
             assert "Bid(" in repr(bid)
+def test_event_to_dict():
+    cfg = nexmark.Config()
+    gen = nexmark.EventGenerator(cfg)
+    for event in gen.take(10):
+        d = event.to_dict()
+        assert isinstance(d, dict)
+        if event.is_person():
+            assert "id" in d and "name" in d
+        elif event.is_auction():
+            assert "id" in d and "item_name" in d
+        elif event.is_bid():
+            assert "auction" in d and "bidder" in d
+def test_person_to_dict():
+    from nexmark import Person
+    person = Person(
+        id=1,
+        name="Alice",
+        email_address="alice@example.com",
+        credit_card="1234",
+        city="Wonderland",
+        state="TX",
+        date_time=1234567890,
+        extra="extra"
+    )
+    d = person.to_dict()
+    assert d["id"] == 1
+    assert d["name"] == "Alice"
+    assert d["email_address"] == "alice@example.com"
+    assert d["credit_card"] == "1234"
+    assert d["city"] == "Wonderland"
+    assert d["state"] == "TX"
+    assert d["date_time"] == 1234567890
+    assert d["extra"] == "extra"
+
+def test_auction_to_dict():
+    from nexmark import Auction
+    auction = Auction(
+        id=2,
+        item_name="Book",
+        description="A good book",
+        initial_bid=10,
+        reserve=20,
+        date_time=1234567891,
+        expires=1234567999,
+        seller=3,
+        category=4,
+        extra="auction-extra"
+    )
+    d = auction.to_dict()
+    assert d["id"] == 2
+    assert d["item_name"] == "Book"
+    assert d["description"] == "A good book"
+    assert d["initial_bid"] == 10
+    assert d["reserve"] == 20
+    assert d["date_time"] == 1234567891
+    assert d["expires"] == 1234567999
+    assert d["seller"] == 3
+    assert d["category"] == 4
+    assert d["extra"] == "auction-extra"
+
+def test_bid_to_dict():
+    from nexmark import Bid
+    bid = Bid(
+        auction=5,
+        bidder=6,
+        price=100,
+        date_time=1234567892,
+        channel="web",
+        url="http://example.com",
+        extra="bid-extra"
+    )
+    d = bid.to_dict()
+    assert d["auction"] == 5
+    assert d["bidder"] == 6
+    assert d["price"] == 100
+    assert d["date_time"] == 1234567892
+    assert d["channel"] == "web"
+    assert d["url"] == "http://example.com"
+    assert d["extra"] == "bid-extra"
+def test_person_to_json():
+    from nexmark import Person
+    person = Person(
+        id=1,
+        name="Alice",
+        email_address="alice@example.com",
+        credit_card="1234",
+        city="Wonderland",
+        state="TX",
+        date_time=1234567890,
+        extra="extra"
+    )
+    json_str = person.to_json()
+    assert isinstance(json_str, str)
+    assert '"name":"Alice"' in json_str
+
+def test_auction_to_json():
+    from nexmark import Auction
+    auction = Auction(
+        id=2,
+        item_name="Book",
+        description="A good book",
+        initial_bid=10,
+        reserve=20,
+        date_time=1234567891,
+        expires=1234567999,
+        seller=3,
+        category=4,
+        extra="auction-extra"
+    )
+    json_str = auction.to_json()
+    assert isinstance(json_str, str)
+    assert '"item_name":"Book"' in json_str
+
+def test_bid_to_json():
+    from nexmark import Bid
+    bid = Bid(
+        auction=5,
+        bidder=6,
+        price=100,
+        date_time=1234567892,
+        channel="web",
+        url="http://example.com",
+        extra="bid-extra"
+    )
+    json_str = bid.to_json()
+    assert isinstance(json_str, str)
+    assert '"auction":5' in json_str
