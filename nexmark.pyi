@@ -1,7 +1,10 @@
 class Config:
-    num_event_generators: int
     def __init__(self) -> None: ...
     def __repr__(self) -> str: ...
+    @property
+    def num_event_generators(self) -> int: ...
+    @num_event_generators.setter
+    def num_event_generators(self, value: int) -> None: ...
 
 class Person:
     def __init__(
@@ -15,6 +18,8 @@ class Person:
         date_time: int,
         extra: str,
     ) -> None: ...
+    @staticmethod
+    def from_json(json: str) -> Person: ...
     id: int
     name: str
     email_address: str
@@ -41,6 +46,8 @@ class Auction:
         category: int,
         extra: str,
     ) -> None: ...
+    @staticmethod
+    def from_json(json: str) -> Auction: ...
     id: int
     item_name: str
     description: str
@@ -66,6 +73,8 @@ class Bid:
         url: str,
         extra: str,
     ) -> None: ...
+    @staticmethod
+    def from_json(json: str) -> Bid: ...
     auction: int
     bidder: int
     price: int
@@ -78,6 +87,7 @@ class Bid:
     def to_json(self) -> str: ...
 
 class Event:
+    def __init__(self, obj: Person | Auction | Bid | str) -> None: ...
     @property
     def value(self) -> Person | Auction | Bid: ...
     def kind(self) -> str: ...

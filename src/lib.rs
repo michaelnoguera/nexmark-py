@@ -105,6 +105,14 @@ impl PyPerson {
             ))
         })
     }
+    #[staticmethod]
+    fn from_json(json: &str) -> PyResult<Self> {
+        serde_json::from_str(json).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Failed to deserialize Person from JSON: {}", e
+            ))
+        })
+    }
 }
 
 
@@ -191,6 +199,14 @@ impl PyAuction {
             ))
         })
     }
+    #[staticmethod]
+    fn from_json(json: &str) -> PyResult<Self> {
+        serde_json::from_str(json).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Failed to deserialize Auction from JSON: {}", e
+            ))
+        })
+    }
 }
 
 
@@ -262,6 +278,14 @@ impl PyBid {
             ))
         })
     }
+    #[staticmethod]
+    fn from_json(json: &str) -> PyResult<Self> {
+        serde_json::from_str(json).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Failed to deserialize Bid from JSON: {}", e
+            ))
+        })
+    }
 }
 
 
@@ -280,6 +304,35 @@ pub struct PyEvent {
 
 #[pymethods]
 impl PyEvent {
+    #[new]
+    fn new(obj: &Bound<PyAny>) -> PyResult<Self> {
+        if let Ok(person) = obj.extract::<PyPerson>() {
+            return Ok(PyEvent { inner: PyEventEnum::Person(person) });
+        }
+        if let Ok(auction) = obj.extract::<PyAuction>() {
+            return Ok(PyEvent { inner: PyEventEnum::Auction(auction) });
+        }
+        if let Ok(bid) = obj.extract::<PyBid>() {
+            return Ok(PyEvent { inner: PyEventEnum::Bid(bid) });
+        }
+        if let Ok(json_str) = obj.extract::<String>() {
+            if let Ok(person) = serde_json::from_str::<PyPerson>(&json_str) {
+                return Ok(PyEvent { inner: PyEventEnum::Person(person) });
+            }
+            if let Ok(auction) = serde_json::from_str::<PyAuction>(&json_str) {
+                return Ok(PyEvent { inner: PyEventEnum::Auction(auction) });
+            }
+            if let Ok(bid) = serde_json::from_str::<PyBid>(&json_str) {
+                return Ok(PyEvent { inner: PyEventEnum::Bid(bid) });
+            }
+            return Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                "JSON did not match Person, Auction, or Bid schema",
+            ));
+        }
+        Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+            "Argument must be a Person, Auction, Bid, or JSON string",
+        ))
+    }
     fn __repr__(&self) -> String {
         match &self.inner {
             PyEventEnum::Person(p) => p.__repr__(),
